@@ -1,14 +1,14 @@
 {
-    "name": "aws-typescript",
-    "devDependencies": {
-        "@types/node": "latest",
-        "prettier": "^1.16.4",
-        "tslint": "^5.12.1",
-        "tslint-config-prettier": "^1.18.0"
-    },
-    "dependencies": {
-        "@pulumi/aws": "latest",
-        "@pulumi/awsx": "^0.16.4",
-        "@pulumi/pulumi": "latest"
-    }
+	"name": "aws-typescript",
+	"devDependencies": {
+		"@types/node": "latest",
+		"prettier": "^1.16.4",
+		"tslint": "^5.12.1",
+		"tslint-config-prettier": "^1.18.0"
+	},
+	"dependencies": {
+		"@pulumi/aws": "latest",
+		"@pulumi/awsx": "^0.16.4",
+		"@pulumi/pulumi": "latest"
+	}
 }
