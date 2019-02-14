@@ -1,7 +1,32 @@
-function genCloudInit(version: string): string {
+function genCloudInit(version: string, dataDisk: string, configDisk: string): string {
 	return `#cloud-config
 repo_update: true
 repo_upgrade: all
+
+# Configure disks
+disk_setup:
+    ${dataDisk}:
+        table_type: 'mbr'
+        layout: 'auto'
+        overwrite: false
+    ${configDisk}:
+        table_type: 'mbr'
+        layout: 'auto'
+        overwrite: false
+
+fs_setup:
+- device: ${dataDisk}
+  filesystem: 'ext4'
+  label: ${dataDisk}
+  overwrite: false
+- device: ${configDisk}
+  filesystem: 'ext4'
+  label: ${configDisk}
+  overwrite: false
+
+mounts:
+- [ ${dataDisk}, /home/ec2-user/.sourcegraph/data ]
+- [ ${configDisk}, /home/ec2-user/.sourcegraph/config ]
 
 runcmd:
 # Create the directory structure for Sourcegraph data

@@ -22,15 +22,29 @@ const securityGroup = new aws.ec2.SecurityGroup('sourcegraph-security-group', {
 	vpcId: vpc.id
 });
 
+const dataDevice = '/dev/sdf';
+const configDevice = '/dev/sdg';
+
 const server = new aws.ec2.Instance('sourcegraph-ec2-instance', {
 	ami,
 	instanceType,
-
+	ebsBlockDevices: [
+		{
+			deviceName: dataDevice,
+			volumeSize: 100,
+			encrypted: true
+		},
+		{
+			deviceName: configDevice,
+			volumeSize: 1,
+			encrypted: true
+		}
+	],
 	keyName: sshKeyName,
 	securityGroups: [ securityGroup.id ],
 	subnetId: vpc.publicSubnetIds[0],
 
-	userData: genCloudInit(sourcegraphVersion)
+	userData: genCloudInit(sourcegraphVersion, dataDevice, configDevice)
 });
 
 exports.publicIP = server.publicIp;
