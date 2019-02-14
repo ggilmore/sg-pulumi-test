@@ -1,31 +1,34 @@
-import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
+import { genCloudInitScript } from './cloud-config';
+import { instanceType, sourcegraphVersion, ami, sshKeyName } from './config';
 
-const size = 't2.micro';
-const ami = 'ami-0ff8a91507f77f867';
-
-const vpc = new awsx.ec2.Vpc('pulumi-test-vpc', {
+const vpc = new awsx.ec2.Vpc('sourcegraph-vpc', {
 	subnets: [ { type: 'public' } ]
 });
 
-const group = new awsx.ec2.SecurityGroup('webserver-security-group', {
-	ingress: [
-		{
-			protocol: 'tcp',
-			fromPort: 22,
-			toPort: 22,
-			cidrBlocks: [ '0.0.0.0/0' ]
-		}
-	],
-	vpc: vpc
+const rules = [ 80, 443, 22, 2633 ].map((p) => ({
+	protocol: 'tcp',
+	fromPort: p,
+	toPort: p,
+	cidrBlocks: [ '0.0.0.0/0' ]
+}));
+
+const securityGroup = new aws.ec2.SecurityGroup('sourcegraph-security-group', {
+	ingress: rules,
+	egress: rules,
+	vpcId: vpc.id
 });
 
-const server = new aws.ec2.Instance('webserver-www', {
-	instanceType: size,
-	securityGroups: [ group.id ],
-	ami: ami,
-	subnetId: vpc.publicSubnetIds[0]
+const server = new aws.ec2.Instance('sourcegraph-ec2-instance', {
+	instanceType,
+	ami,
+
+	keyName: sshKeyName,
+	securityGroups: [ securityGroup.id ],
+	subnetId: vpc.publicSubnetIds[0],
+
+	userData: genCloudInitScript(sourcegraphVersion)
 });
 
 exports.publicIP = server.publicIp;

@@ -1,2 +1,5 @@
 config:
-  aws:region: us-east-1
+  aws:region: us-west-2
+  pulumi-aws:instanceType: t2.large
+  pulumi-aws:sourcegraphVersion: 3.0.1
+  pulumi-aws:sshKeyName: geoffrey
