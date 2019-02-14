@@ -1,4 +1,4 @@
-function genCloudInitScript(version: string): string {
+function genCloudInit(version: string): string {
 	return `#cloud-config
 repo_update: true
 repo_upgrade: all
@@ -21,4 +21,4 @@ runcmd:
 `;
 }
 
-export { genCloudInitScript };
+export { genCloudInit };
