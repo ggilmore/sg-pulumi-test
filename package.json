@@ -1,0 +1,13 @@
+{
+    "name": "aws-typescript",
+    "devDependencies": {
+        "@types/node": "latest",
+        "prettier": "^1.16.4",
+        "tslint": "^5.12.1"
+    },
+    "dependencies": {
+        "@pulumi/aws": "latest",
+        "@pulumi/awsx": "^0.16.4",
+        "@pulumi/pulumi": "latest"
+    }
+}
