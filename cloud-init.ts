@@ -48,7 +48,7 @@ write_files:
 - encoding: b64
   
   content: ${Base64.encode(nginxConf(CERTIFICATE_FILE_NAME, KEY_FILE_NAME))}
-  path: ${NGINX_PATH}
+  path: /home/ec2-user/nginx.conf
   permissions: '644'
 
 runcmd:
@@ -75,13 +75,15 @@ function certificateCommands(certificatePath: string, keyPath: string): string {
 	return `
 # Install mkcert
 - wget https://github.com/FiloSottile/mkcert/releases/download/v1.3.0/mkcert-v1.3.0-linux-amd64 -O /usr/local/bin/mkcert
-# TODO @ggilmore, figure persmissions out
+# TODO @ggilmore, figure permissions out
 - chmod a+x /usr/local/bin/mkcert
 
 # Generate self-signed cert 
 - [sh, -c, 'env']
-- [sh, -c, 'mkcert -install']
-- [sh, -c, 'mkcert -cert-file ${certificatePath} -key-file ${keyPath} $(curl http://169.254.169.254/latest/meta-data/public-hostname)']
+- mkdir -p /root
+- cp /home/ec2-user/nginx.conf ${NGINX_PATH} 
+- [sh, -c, 'HOME=/root mkcert -install']
+- [sh, -c, 'HOME=/root mkcert -cert-file ${certificatePath} -key-file ${keyPath} $(curl http://169.254.169.254/latest/meta-data/public-hostname)']
 `;
 }
 
