@@ -28,18 +28,22 @@ const configDevice = '/dev/sdg';
 const server = new aws.ec2.Instance('sourcegraph-ec2-instance', {
 	ami,
 	instanceType,
+
 	ebsBlockDevices: [
 		{
 			deviceName: dataDevice,
 			volumeSize: 100,
+
 			encrypted: true
 		},
 		{
 			deviceName: configDevice,
 			volumeSize: 1,
+
 			encrypted: true
 		}
 	],
+
 	keyName: sshKeyName,
 	securityGroups: [ securityGroup.id ],
 	subnetId: vpc.publicSubnetIds[0],
