@@ -1,5 +1,5 @@
 config:
   aws:region: us-west-2
   pulumi-aws:instanceType: t2.large
-  pulumi-aws:sourcegraphVersion: 3.0.1
+  pulumi-aws:sourcegraphVersion: ggilmore-klduge-ext-url
   pulumi-aws:sshKeyName: geoffrey

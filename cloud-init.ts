@@ -11,43 +11,19 @@ const CERTIFICATE_PATH = path.posix.join(CONFIG_FOLDER, CERTIFICATE_FILE_NAME);
 const KEY_PATH = path.posix.join(CONFIG_FOLDER, KEY_FILE_NAME);
 const NGINX_PATH = path.posix.join(CONFIG_FOLDER, 'nginx.conf');
 
-function genCloudInit(version: string, dataDisk: string, configDisk: string): string {
+function genCloudInit(version: string, dataDevice: string, configDevice: string): string {
 	return `#cloud-config
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 repo_update: true
 repo_upgrade: all
 
-# Configure disks
-disk_setup:
-    ${dataDisk}:
-        table_type: 'mbr'
-        layout: true
-        overwrite: false
-    ${configDisk}:
-        table_type: 'mbr'
-        layout: true
-        overwrite: false
-
-fs_setup:
-- device: ${dataDisk}
-  filesystem: 'ext4'
-  label: ${dataDisk}
-  overwrite: false
-  partition: 'auto'
-- device: ${configDisk}
-  filesystem: 'ext4'
-  label: ${configDisk}
-  partition: 'auto'
-  overwrite: false
-
-mounts:
-- [ ${dataDisk}, ${DATA_FOLDER} ]
-- [ ${configDisk}, ${CONFIG_FOLDER} ]
+${setupDisks(dataDevice, configDevice)}
 
 write_files:
 - encoding: b64
-  
   content: ${Base64.encode(nginxConf(CERTIFICATE_FILE_NAME, KEY_FILE_NAME))}
+  # The only way I was able to get this to work was to copy over the file 
+  # during runcmd. Maybe the folder contents are lost after the disks are mounted?
   path: /home/ec2-user/nginx.conf
   permissions: '644'
 
@@ -67,7 +43,43 @@ runcmd:
 ${certificateCommands(CERTIFICATE_PATH, KEY_PATH)}
 
 # Install and run Sourcegraph. Restart the container upon subsequent reboots
-- [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume ${CONFIG_FOLDER}:/etc/sourcegraph --volume ${DATA_FOLDER}:/var/opt/sourcegraph sourcegraph/server:${version}' ]
+# I had to modify the docker run command to stop exposing 7443. Is that outdated now?
+- [ sh, -c, 'docker run -d --publish 443:7080 --publish 2633:2633 --restart unless-stopped --volume ${CONFIG_FOLDER}:/etc/sourcegraph --volume ${DATA_FOLDER}:/var/opt/sourcegraph -e "SOURCEGRAPH_EXTERNAL_URL=https://$(curl http://169.254.169.254/latest/meta-data/public-hostname)" sourcegraph/server:${version}' ]
+`;
+}
+
+function setupDisks(dataDevice: string, configDevice: string): string {
+	return `
+# Configure disks
+
+# Setup partitions
+disk_setup:
+    ${dataDevice}:
+        table_type: 'mbr'
+        layout: true
+        overwrite: false
+    ${configDevice}:
+        table_type: 'mbr'
+        layout: true
+        overwrite: false
+
+# Setup filesystems
+fs_setup:
+- device: ${dataDevice}
+  filesystem: 'ext4'
+  label: ${dataDevice}
+  overwrite: false
+  partition: 'auto'
+- device: ${configDevice}
+  filesystem: 'ext4'
+  label: ${configDevice}
+  partition: 'auto'
+  overwrite: false
+
+# Mount disks
+mounts:
+- [ ${dataDevice}, ${DATA_FOLDER} ]
+- [ ${configDevice}, ${CONFIG_FOLDER} ]
 `;
 }
 
@@ -83,6 +95,7 @@ function certificateCommands(certificatePath: string, keyPath: string): string {
 - mkdir -p /root
 - cp /home/ec2-user/nginx.conf ${NGINX_PATH} 
 - [sh, -c, 'HOME=/root mkcert -install']
+# The 'curl' command is fetching the public DNS name for the instance. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html f
 - [sh, -c, 'HOME=/root mkcert -cert-file ${certificatePath} -key-file ${keyPath} $(curl http://169.254.169.254/latest/meta-data/public-hostname)']
 `;
 }
